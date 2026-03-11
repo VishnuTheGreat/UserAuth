@@ -34,7 +34,7 @@ This project aims to implement a user authentication system that is secure, scal
    ```
 
 ## Usage
-After starting the server, navigate to `http://localhost:3000` in your web browser to access the application.
+After starting the server, navigate to `http://localhost:5173` in your web browser to access the application.
 
 ## Contributing
 Contributions are welcome! Please fork the repository and submit a pull request for any enhancements or bug fixes.
