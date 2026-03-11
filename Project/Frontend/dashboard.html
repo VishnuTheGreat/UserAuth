@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dashboard | Secure Auth</title>
+    <link rel="stylesheet" href="index.css"/>
+</head>
+<body>
+
+<!-- Profile Icon -->
+<div class="profile-wrapper">
+    <div id="profileIcon" class="profile-icon">
+        <span id="profileInitial">U</span>
+    </div>
+
+    <div id="profileDropdown" class="profile-dropdown" aria-hidden="true">
+        <h4 id="profileName">User Name</h4>
+        <p id="profileEmail">user@email.com</p>
+
+        <div class="profile-details">
+            <p><strong>DOB:</strong> <span id="profileDob">-</span></p>
+            <p><strong>Mobile:</strong> <span id="profileMobile">-</span></p>
+            <p><strong>PAN:</strong> <span id="profilePan">-</span></p>
+        </div>
+
+        <button id="profileLogout">Logout</button>
+    </div>
+</div>
+
+<div class="container dashboard-container">
+    <h2>Secure Dashboard</h2>
+    <p class="subtitle">You have successfully authenticated via JWT and MFA.</p>
+
+    <div id="dataBox" class="msg"
+         style="display:block;background-color:var(--surface);color:var(--text);padding:20px;border:1px dashed var(--border);">
+        Loading secure data...
+    </div>
+
+    <button id="logoutBtn" style="background-color: var(--border); margin-top: 30px;">Log Out</button>
+</div>
+
+<script>
+    const API_BASE_URL = 'http://localhost:8080'; // backend origin
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('jwt');
+      if (!token) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const dataBox = document.getElementById('dataBox');
+
+      // 1) Dashboard welcome text
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const text = await response.text();
+          dataBox.innerHTML = text;   // e.g., “Welcome back, kesamreddy!”
+          dataBox.style.borderColor = 'var(--success)';
+        } else {
+          dataBox.textContent = 'Failed to load secure data. Token might be expired or invalid.';
+          dataBox.style.borderColor = 'var(--error)';
+          dataBox.style.color = 'var(--error)';
+          setTimeout(() => window.location.href = 'login.html', 1500);
+        }
+      } catch (err) {
+        console.error(err);
+        dataBox.textContent = 'Error connecting to the server.';
+      }
+
+      // 2) Profile dropdown handlers
+      const profileIcon = document.getElementById('profileIcon');
+      const profileDropdown = document.getElementById('profileDropdown');
+      const profileLogout = document.getElementById('profileLogout');
+
+      if (profileIcon && profileDropdown) {
+        profileIcon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const open = profileDropdown.getAttribute('aria-hidden') === 'false';
+          profileDropdown.setAttribute('aria-hidden', open ? 'true' : 'false');
+        });
+
+        profileDropdown.addEventListener('click', (e) => { e.stopPropagation(); });
+
+        document.addEventListener('click', (e) => {
+          if (!profileIcon.contains(e.target) && !profileDropdown.contains(e.target)) {
+            profileDropdown.setAttribute('aria-hidden', 'true');
+          }
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            profileDropdown.setAttribute('aria-hidden', 'true');
+          }
+        });
+      }
+
+      // 3) Fetch profile data
+      try {
+        const resp = await fetch(`${API_BASE_URL}/api/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (resp.ok) {
+          const user = await resp.json();
+
+          // Safer getter
+          const get = (obj, key, fallback = '-') => {
+            if (!obj || !(key in obj)) return fallback;
+            const val = obj[key];
+            if (val === undefined || val === null) return fallback;
+            if (typeof val === 'string' && val.trim() === '') return fallback;
+            return val;
+          };
+
+          document.getElementById('profileName').textContent   = get(user, 'name', 'User');
+          document.getElementById('profileEmail').textContent  = get(user, 'email');
+          document.getElementById('profileDob').textContent    = get(user, 'dob');
+          document.getElementById('profileMobile').textContent = get(user, 'mobileNo');
+          document.getElementById('profilePan').textContent    = get(user, 'panNo');
+
+          const initialSource = get(user, 'name', 'U');
+          document.getElementById('profileInitial').textContent =
+            (initialSource && initialSource[0] ? initialSource[0] : 'U').toUpperCase();
+        } else {
+          const t = await resp.text().catch(() => '');
+          console.warn('Profile fetch failed with status:', resp.status, t);
+        }
+      } catch (err) {
+        console.error('Failed to load profile', err);
+      }
+
+      // 4) Logout buttons
+      document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        localStorage.removeItem('jwt');
+        localStorage.removeItem('mfaEmail');
+        window.location.href = 'login.html';
+      });
+
+      profileLogout?.addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      });
+    });
+</script>
+</body>
+</html>

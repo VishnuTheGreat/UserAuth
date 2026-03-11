@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Secure Auth</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>Welcome Back</h2>
+    <p class="subtitle">Enter your credentials to access your account.</p>
+
+    <div id="messageBox" class="msg"></div>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" required placeholder="john@example.com">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required placeholder="••••••••">
+        </div>
+        <button type="submit">Log In</button>
+    </form>
+
+    <div class="links">
+        Don't have an account? <a href="register.html">Sign Up</a>
+    </div>
+</div>
+
+<script>
+    const API_BASE_URL = 'http://localhost:8080'; // backend origin
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msgBox = document.getElementById('messageBox');
+      msgBox.className = 'msg';
+      msgBox.textContent = 'Authenticating...';
+      msgBox.style.display = 'block';
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        // Helpful: log details to see what's going on
+        const contentType = response.headers.get('content-type') || '';
+        const isJson = contentType.includes('application/json');
+        const result = isJson ? await response.json() : { message: await response.text() };
+
+        if (response.ok) {
+          msgBox.className = 'msg success';
+          msgBox.textContent = result.message || 'Login success';
+
+          if (result.mfaRequired) {
+            localStorage.setItem('mfaEmail', email);
+            setTimeout(() => { window.location.href = 'mfa.html'; }, 800);
+          } else {
+            localStorage.setItem('jwt', result.token);
+            setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+          }
+        } else {
+          console.error('Login failed:', response.status, result);
+          msgBox.className = 'msg error';
+          msgBox.textContent = result.message || `Login failed (HTTP ${response.status}).`;
+        }
+      } catch (err) {
+        console.error('Network error during login:', err);
+        msgBox.className = 'msg error';
+        msgBox.textContent = 'An error occurred during login.';
+      }
+    });
+</script>
+</body>
+</html>
