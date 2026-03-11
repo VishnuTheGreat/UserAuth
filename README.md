@@ -10,9 +10,9 @@ This project aims to implement a user authentication system that is secure, scal
 - **Session Management**: Handles user sessions to maintain logged-in states.
 
 ## Technologies Used
-- **Frontend**: HTML, CSS, JavaScript
-- **Backend**: Node.js, Express
-- **Database**: MongoDB
+- **Frontend**: HTML, CSS, JavaScript, Tailwind
+- **Backend**: Node.js, ReactJS
+- **Database**: MySQL
 - **Authentication**: JWT (JSON Web Tokens)
 
 ## Installation Instructions
